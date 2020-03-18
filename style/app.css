@@ -1,0 +1,59 @@
+@import url("iconfont.css");
+
+view,
+scroll-view,
+swiper,
+swiper-item,
+cover-view,
+cover-image,
+icon,
+text,
+rich-text,
+progress,
+button,
+checkbox,
+form,
+input,
+label,
+radio,
+slider,
+switch,
+textarea,
+navigator,
+audio,
+camera,
+image,
+video {
+	box-sizing: border-box;
+}
+
+.m-t-20 {
+	margin-top: 20rpx;
+}
+
+.b-b:after,
+.b-t:after {
+	position: absolute;
+	z-index: 3;
+	left: 0;
+	right: 0;
+	height: 0;
+	content: '';
+	transform: scaleY(.5);
+	border-bottom: 1px solid #E4E7ED;
+}
+
+.b-b:after {
+	bottom: 0;
+}
+
+.b-t:after {
+	top: 0;
+}
+
+.clamp {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: block;
+}
