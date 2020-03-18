@@ -1,6 +1,7 @@
 <template>
 	<view class="container">
 
+		<!-- 导航栏 -->
 		<view class="navbar" :style="{position:headerPosition,top:headerTop}">
 			<view class="nav-item" :class="{current: filterIndex === 0}" @click="tabClick(0)">
 				综合排序
@@ -18,14 +19,29 @@
 			<text class="cate-item iconfont iconfenlei" @click="toggleCateMask('show')"></text>
 		</view>
 
+		<!-- 商品列表 -->
+		<view class="goods-list">
+			<view v-for="(item, index) in goodsList" :key="index" class="goods-item" @click="navToDetailPage(item)">
+				<view class="image-wrapper">
+					<image :src="item.image" mode="aspectFill"></image>
+				</view>
+				<text class="title clamp">{{item.title}}</text>
+				<view class="price-box">
+					<text class="price">{{item.price}}</text>
+					<text>已售 {{item.sales}}</text>
+				</view>
+			</view>
+		</view>
+		<uni-load-more :status="loadingType"></uni-load-more>
+
 		<!-- 分类面板 -->
 		<view class="cate-mask" :class="cateMaskState===0 ? 'none' : cateMaskState===1 ? 'show' : ''" @click="toggleCateMask">
 			<view class="cate-content" @click.stop.prevent="stopPrevent" @touchmove.stop.prevent="stopPrevent">
 				<scroll-view scroll-y class="cate-list">
-					<view v-for="item in cateList" :key="item.id">
+					<view v-for="item in cateList.subs" :key="item.id">
 						<view class="cate-item b-b two">{{item.name}}</view>
-						<view v-for="tItem in item.child" :key="tItem.id" class="cate-item b-b" :class="{active: tItem.id==cateId}"
-						 @click="changeCate(tItem)">
+						<view v-for="tItem in item.subs" :key="tItem.id" class="cate-item b-b" :class="{active: tItem.id==categoryid}"
+						 @click="changeCategory(tItem)">
 							{{tItem.name}}
 						</view>
 					</view>
@@ -41,11 +57,14 @@
 		mapState,
 		mapMutations
 	} from 'vuex';
+	import uniLoadMore from '@/components/uni-load-more.vue';
 	export default {
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//注册组件
 		///////////////////////////////////////////////////////////////////////////////////////////
-		components: {},
+		components: {
+			uniLoadMore
+		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//数据对象
@@ -58,6 +77,7 @@
 				loadingType: 'more', //加载更多状态
 				filterIndex: 0, //0综合排序,1销量优先,2 价格
 				priceOrder: 0, //1 价格从低到高 2价格从高到低
+				categoryid: 0, //已选三级分类id
 				cateList: [], //分类列表
 				goodsList: [], //商品列表
 			}
@@ -83,6 +103,10 @@
 			// #ifdef H5
 			this.headerTop = document.getElementsByTagName('uni-page-head')[0].offsetHeight + 'px';
 			// #endif
+
+			this.categoryid = option.cid;
+			this.loadCategory(option.pid, option.sid);
+			this.loadGoodlist();
 		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
@@ -109,22 +133,94 @@
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//监听页面滚动，参数为Object
 		///////////////////////////////////////////////////////////////////////////////////////////
-		onPageScroll(e) {},
+		onPageScroll(e) {
+			if(e.scrollTop>=0){
+				this.headerPosition = "fixed";
+			}else{
+				this.headerPosition = "absolute";
+			}
+		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//监听用户下拉动作，一般用于下拉刷新
 		///////////////////////////////////////////////////////////////////////////////////////////
-		onPullDownRefresh() {},
+		onPullDownRefresh() {
+			this.loadGoodlist('refresh');
+		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//页面滚动到底部的事件（不是scroll-view滚到底），常用于下拉下一页数据。
 		///////////////////////////////////////////////////////////////////////////////////////////
-		onReachBottom() {},
+		onReachBottom() {
+			this.loadGoodlist();
+		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//函数调用,
 		///////////////////////////////////////////////////////////////////////////////////////////
 		methods: {
+			//加载分类
+			async loadCategory(pid, sid) {
+				let list = await this.$api.json('cateList');
+				let catelist = list.filter(item => item.id == pid);
+				this.cateList = catelist[0];
+			},
+			//加载商品, 带下拉刷新和上滑加载
+			async loadGoodlist(type = 'add', loading) {
+				//没有更多直接返回
+				if (type === 'add') {
+					if (this.loadingType === 'nomore') {
+						return;
+					}
+					this.loadingType = 'loading';
+				} else {
+					this.loadingType = 'more'
+				}
+
+				let goodsList = await this.$api.json('goodsList');
+				if (type === 'refresh') {
+					this.goodsList = [];
+				}
+
+				//筛选，测试数据直接前端筛选了
+				if (this.filterIndex === 1) {
+					goodsList.sort((a, b) => b.sales - a.sales)
+				}
+				if (this.filterIndex === 2) {
+					goodsList.sort((a, b) => {
+						if (this.priceOrder == 1) {
+							return a.price - b.price;
+						}
+						return b.price - a.price;
+					});
+				}
+
+				this.goodsList = this.goodsList.concat(goodsList);
+
+				//判断是否还有下一页，有是more  没有是nomore(测试数据判断大于20就没有了)
+				this.loadingType = this.goodsList.length > 20 ? 'nomore' : 'more';
+				if (type === 'refresh') {
+					if (loading == 1) {
+						uni.hideLoading()
+					} else {
+						uni.stopPullDownRefresh();
+					}
+				}
+			},
+			//分类点击
+			changeCategory(item) {
+				console.log(item);
+				this.categoryid = item.id;
+				this.toggleCateMask('hide');
+				uni.pageScrollTo({
+					duration: 300,
+					scrollTop: 0
+				});
+				this.loadGoodlist('refresh', 1);
+				uni.showLoading({
+					title: '正在加载'
+				});
+			},
 			//筛选点击
 			tabClick(index) {
 				if (this.filterIndex === index && index !== 2) {
@@ -140,6 +236,10 @@
 					duration: 300,
 					scrollTop: 0
 				});
+				this.loadGoodlist('refresh', 1);
+				uni.showLoading({
+					title: '正在加载'
+				});
 			},
 
 			//显示分类面板
@@ -151,6 +251,15 @@
 					this.cateMaskState = state;
 				}, timer);
 			},
+			//详情
+			navToDetailPage(item){
+				//测试数据没有写id，用title代替
+				let id = item.title;
+				uni.navigateTo({
+					url: `/pages/product/product?id=${id}`
+				});
+			},
+			stopPrevent() {}
 		}
 	}
 </script>
@@ -303,6 +412,56 @@
 
 		.active {
 			color: $page-color-primary;
+		}
+	}
+	
+	/* 商品列表 */
+	.goods-list{
+		display:flex;
+		flex-wrap:wrap;
+		padding: 0 30upx;
+		background: #fff;
+		.goods-item{
+			display:flex;
+			flex-direction: column;
+			width: 48%;
+			padding-bottom: 40upx;
+			&:nth-child(2n+1){
+				margin-right: 4%;
+			}
+		}
+		.image-wrapper{
+			width: 100%;
+			height: 330upx;
+			border-radius: 3px;
+			overflow: hidden;
+			image{
+				width: 100%;
+				height: 100%;
+				opacity: 1;
+			}
+		}
+		.title{
+			font-size: $uni-font-size-lg;
+			color: $font-color-dark;
+			line-height: 80upx;
+		}
+		.price-box{
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding-right: 10upx;
+			font-size: 24upx;
+			color: $font-color-light;
+		}
+		.price{
+			font-size: $uni-font-size-lg;
+			color: $uni-color-primary;
+			line-height: 1;
+			&:before{
+				content: '￥';
+				font-size: 26upx;
+			}
 		}
 	}
 </style>

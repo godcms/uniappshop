@@ -339,10 +339,54 @@ const cartList = [{
 		number: 1
 	}
 ];
+
+const orderList = [
+	{
+		time: '2019-04-06 11:37',
+		state: 9,
+		goodsList: [{
+			title: '古黛妃 短袖t恤女 春夏装2019新款韩版宽松',
+			price: 179.5,
+			image: 'https://img13.360buyimg.com/n8/jfs/t1/30343/20/1029/481370/5c449438Ecb46a15b/2b2adccb6dc742fd.jpg',
+			number: 1,
+			attr: '珊瑚粉 M'
+		},{
+			title: '古黛妃 短袖t恤女 春夏装2019新款韩版宽松',
+			price: 179.5,
+			image: 'https://img13.360buyimg.com/n8/jfs/t1/30343/20/1029/481370/5c449438Ecb46a15b/2b2adccb6dc742fd.jpg',
+			number: 1,
+			attr: '珊瑚粉 M'
+		}]
+	},
+	{
+		time: '2019-04-06 11:37',
+		state: 1,
+		goodsList: [{
+			title: '回力女鞋高帮帆布鞋女学生韩版鞋子女2019潮鞋女鞋新款春季板鞋女',
+			price: 69,
+			image: 'https://img.alicdn.com/imgextra/i3/2128794607/TB2gzzoc41YBuNjy1zcXXbNcXXa_!!2128794607.jpg_430x430q90.jpg',
+			number: 1,
+			attr: '白色-高帮 39'
+		}]
+	},
+	{
+		time: '2019-04-06 11:37',
+		state: 2,
+		goodsList: [{
+			title: '2019潮鞋女鞋新款春季板鞋女',
+			price: 69,
+			image: 'https://img.alicdn.com/imgextra/i3/2128794607/TB2gzzoc41YBuNjy1zcXXbNcXXa_!!2128794607.jpg_430x430q90.jpg',
+			number: 1,
+			attr: '白色-高帮 39'
+		}]
+	}
+];
+
 export default {
 	userInfo,
 	carouselList,
 	goodsList,
 	cateList,
-	cartList
+	cartList,
+	orderList
 }

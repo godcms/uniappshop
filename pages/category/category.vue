@@ -9,7 +9,7 @@
 			<view v-for="item in nodesList" :key="item.id" :id="'main-'+item.id">
 				<text class="right-item">{{item.name}}</text>
 				<view class="nodes-list">
-					<view class="nodes-item" v-for="nodes in item.subs" :key="nodes.id" @click="navToGoods(nodes.id)">
+					<view class="nodes-item" v-for="nodes in item.subs" :key="nodes.id" @click="navToGoods(item.pid,item.id,nodes.id)">
 						<image :src="nodes.icon"></image>
 						<text>{{nodes.name}}</text>
 					</view>
@@ -133,10 +133,15 @@
 				})
 				this.sizeCalcState = true;
 			},
-			//跳转到商品列表
-			navToGoods(cid) {
+			/**
+			 * 跳转到商品列表
+			 * pid 一级分类ID
+			 * sid 二级分类ID
+			 * cid 三级分类ID
+			 */
+			navToGoods(pid, sid, cid) {
 				uni.navigateTo({
-					url: `/pages/goods/goods?categoryid=${cid}`
+					url: `/pages/goods/goods?pid=${pid}&sid=${sid}&cid=${cid}`
 				});
 			},
 		}

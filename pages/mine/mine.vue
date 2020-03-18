@@ -169,12 +169,7 @@
 			//统一跳转接口,拦截未登录路由
 			navTo(url) {
 				if (!this.hasLogin) {
-					//url = '/pages/public/login';
-					uni.showToast({
-						title: '没有登录',
-						duration: 2000
-					});
-					return;
+					url = '/pages/login/login';
 				}
 				uni.navigateTo({
 					url
