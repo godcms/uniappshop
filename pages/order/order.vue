@@ -12,10 +12,42 @@
 			<swiper-item class="tab-content" v-for="(tabItem,tabIndex) in navList" :key="tabIndex">
 				<scroll-view class="list-scroll-content" scroll-y @scrolltolower="loadData">
 
+					<!-- 空白页 -->
+					<view v-if="tabItem.loaded === true && tabItem.orderList.length === 0" class="empty-content">
+						<image src="/static/emptycart.jpg" mode="aspectFit"></image>
+						<view class="empty-tips">
+							没有订单
+						</view>
+					</view>
+					
 					<!-- 订单列表 -->
 					<view v-for="(item,index) in tabItem.orderList" :key="index" class="order-item">
-						aaa
+						<view class="i-top b-b">
+							<text class="time">{{item.time}}</text>
+							<text class="state" :style="{color: item.stateColor}">{{item.stateText}}</text>
+							<text v-if="item.state===9" class="del-btn iconfont iconqingkong" @click="deleteOrder(index)"></text>
+						</view>
+						<view class="goods-box-single" v-for="(goodsItem, goodsIndex) in item.goodsList" :key="goodsIndex">
+							<image class="goods-img" :src="goodsItem.image" mode="aspectFill"></image>
+							<view class="right">
+								<text class="title clamp">{{goodsItem.title}}</text>
+								<text class="attr-box">{{goodsItem.attr}} x {{goodsItem.number}}</text>
+								<text class="price">{{goodsItem.price}}</text>
+							</view>
+						</view>
+						<view class="price-box">
+							共
+							<text class="num">7</text>
+							件商品 实付款
+							<text class="price">143.7</text>
+						</view>
+						<view class="action-box b-t" v-if="item.state != 9">
+							<button class="action-btn" @click="cancelOrder(item)">取消订单</button>
+							<button class="action-btn recom">立即支付</button>
+						</view>
 					</view>
+					
+					<uni-load-more :status="tabItem.loadingType"></uni-load-more>
 
 				</scroll-view>
 			</swiper-item>
@@ -29,12 +61,15 @@
 		mapState,
 		mapMutations
 	} from 'vuex';
+	import uniLoadMore from '@/components/uni-load-more.vue';
 	import Json from '@/Json';
 	export default {
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//注册组件
 		///////////////////////////////////////////////////////////////////////////////////////////
-		components: {},
+		components: {
+			uniLoadMore
+		},
 
 		///////////////////////////////////////////////////////////////////////////////////////////
 		//数据对象
@@ -140,7 +175,7 @@
 				}
 				navItem.loadingType = 'loading';
 				setTimeout(() => {
-					let orderList = Json.orderList.filter(item=>{
+					let orderList = Json.orderList.filter(item => {
 						//添加不同状态下订单的表现形式
 						item = Object.assign(item, this.orderStateExp(item.state));
 						//演示数据所以自己进行状态筛选
@@ -168,6 +203,40 @@
 			changeTab(e) {
 				this.tabCurrentIndex = e.target.current;
 				this.loadData('tabChange');
+			},
+			//删除订单
+			deleteOrder(index) {
+				uni.showLoading({
+					title: '请稍后'
+				})
+				setTimeout(() => {
+					this.navList[this.tabCurrentIndex].orderList.splice(index, 1);
+					uni.hideLoading();
+				}, 600)
+			},
+			//取消订单
+			cancelOrder(item) {
+				uni.showLoading({
+					title: '请稍后'
+				})
+				setTimeout(() => {
+					let {
+						stateText,
+						stateColor
+					} = this.orderStateExp(9);
+					item = Object.assign(item, {
+						state: 9,
+						stateText,
+						stateColor
+					});
+
+					//取消订单后删除待付款中该项
+					let list = this.navList[1].orderList;
+					let index = list.findIndex(val => val.id === item.id);
+					index !== -1 && list.splice(index, 1);
+
+					uni.hideLoading();
+				}, 600);
 			},
 			//订单状态文字和颜色
 			orderStateExp(state) {
@@ -238,22 +307,22 @@
 			}
 		}
 	}
-	
+
 	.swiper-box {
 		height: calc(100% - 40px);
 	}
-	
+
 	.list-scroll-content {
 		height: 100%;
 	}
-	
+
 	.order-item {
 		display: flex;
 		flex-direction: column;
 		padding-left: 30upx;
 		background: #fff;
 		margin-top: 16upx;
-	
+
 		.i-top {
 			display: flex;
 			align-items: center;
@@ -262,21 +331,21 @@
 			font-size: $uni-font-size-base;
 			color: $font-color-dark;
 			position: relative;
-	
+
 			.time {
 				flex: 1;
 			}
-	
+
 			.state {
 				color: #fa436a;
 			}
-	
+
 			.del-btn {
 				padding: 10upx 0 10upx 36upx;
 				font-size: $uni-font-size-lg;
 				color: $font-color-light;
 				position: relative;
-	
+
 				&:after {
 					content: '';
 					width: 0;
@@ -289,61 +358,61 @@
 				}
 			}
 		}
-	
+
 		/* 多条商品 */
 		.goods-box {
 			height: 160upx;
 			padding: 20upx 0;
 			white-space: nowrap;
-	
+
 			.goods-item {
 				width: 120upx;
 				height: 120upx;
 				display: inline-block;
 				margin-right: 24upx;
 			}
-	
+
 			.goods-img {
 				display: block;
 				width: 100%;
 				height: 100%;
 			}
 		}
-	
+
 		/* 单条商品 */
 		.goods-box-single {
 			display: flex;
 			padding: 20upx 0;
-	
+
 			.goods-img {
 				display: block;
 				width: 120upx;
 				height: 120upx;
 			}
-	
+
 			.right {
 				flex: 1;
 				display: flex;
 				flex-direction: column;
 				padding: 0 30upx 0 24upx;
 				overflow: hidden;
-	
+
 				.title {
 					font-size: $uni-font-size-base + 2upx;
 					color: $font-color-dark;
 					line-height: 1;
 				}
-	
+
 				.attr-box {
 					font-size: $uni-font-size-base + 2upx;
 					color: $font-color-light;
 					padding: 10upx 12upx;
 				}
-	
+
 				.price {
 					font-size: $uni-font-size-base + 2upx;
 					color: $font-color-dark;
-	
+
 					&:before {
 						content: '￥';
 						font-size: $uni-font-size-base;
@@ -352,7 +421,7 @@
 				}
 			}
 		}
-	
+
 		.price-box {
 			display: flex;
 			justify-content: flex-end;
@@ -360,16 +429,16 @@
 			padding: 20upx 30upx;
 			font-size: $uni-font-size-base + 2upx;
 			color: $font-color-light;
-	
+
 			.num {
 				margin: 0 8upx;
 				color: $font-color-dark;
 			}
-	
+
 			.price {
 				font-size: $uni-font-size-lg;
 				color: $font-color-dark;
-	
+
 				&:before {
 					content: '￥';
 					font-size: $uni-font-size-base;
@@ -377,7 +446,7 @@
 				}
 			}
 		}
-	
+
 		.action-box {
 			display: flex;
 			justify-content: flex-end;
@@ -386,7 +455,7 @@
 			position: relative;
 			padding-right: 30upx;
 		}
-	
+
 		.action-btn {
 			width: 160upx;
 			height: 60upx;
@@ -399,15 +468,15 @@
 			color: $font-color-dark;
 			background: #fff;
 			border-radius: 100px;
-	
+
 			&:after {
 				border-radius: 100px;
 			}
-	
+
 			&.recom {
 				background: #fff9f9;
 				color: #fa436a;
-	
+
 				&:after {
 					border-color: #f7bcc8;
 				}
@@ -415,4 +484,29 @@
 		}
 	}
 	
+	.empty-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		background: $page-color-base;
+		padding-bottom: 120upx;
+		
+		image {
+			width: 240upx;
+			height: 160upx;
+		}
+		
+		.empty-tips {
+			display: flex;
+			font-size: $uni-font-size-lg;
+			color: $font-color-disabled;
+		}
+	}
 </style>
